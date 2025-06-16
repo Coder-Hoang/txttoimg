@@ -1,6 +1,6 @@
 export async function onRequestPost(context) {
   const AI = context.env.AI;
-  const modelName = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
+  const modelName = "@cf/lykon/dreamshaper-8-lcm";
 
   try {
     const { prompt } = await context.request.json();
