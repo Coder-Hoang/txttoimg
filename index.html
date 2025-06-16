@@ -33,7 +33,7 @@
             --glass-bg: rgba(255, 255, 255, 0.07); /* Not directly used but kept */
             --glass-border: rgba(255, 255, 255, 0.2); /* Not directly used but kept */
             --bg-color: #f3efef; /* Specific background for body */
-            --spinner-color: var(--primary-color); /* Kept for general theme */
+            --spinner-color: var(--primary-color);
         }
 
         /* CSS Variables for Dark Theme */
@@ -57,7 +57,7 @@
             --dropdown-border: #4a5568;
             --dropdown-hover-background: #4a5568;
             --bg-color: #140400; /* Specific background for body in dark mode */
-            --spinner-color: var(--primary-color); /* Kept for general theme */
+            --spinner-color: var(--primary-color);
         }
 
         /* General Body Styling */
@@ -155,59 +155,34 @@
             white-space: pre-wrap; /* Preserve whitespace and wrap text */
             font-family: monospace; /* Good for code/text output */
             position: relative;
-            /* Adaptive height: use flexbox or simply rely on min-height and content */
-            display: flex; /* Use flexbox to center placeholder/loader */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
-            flex-direction: column; /* Stack children vertically */
-            gap: 10px; /* Spacing for potential multiple children (e.g., placeholder, content) */
-        }
-
-        /* The actual content div inside textOutput, for dynamic height */
-        #generatedTextContent {
-            flex-grow: 1; /* Allow content to grow */
-            width: 100%; /* Take full width of parent */
-            padding: 0; /* Reset padding if any */
-            margin: 0; /* Reset margin if any */
-            min-height: 100%; /* Ensure it pushes min-height of parent */
-            display: block; /* Ensure block behavior */
         }
 
         .placeholder-text {
-            /* Position relative to #textOutput, which is flex now */
-            position: static; /* No longer absolutely positioned */
-            transform: none; /* No longer uses transform for centering */
+            position: absolute;
+            font-style: italic;
+            color: var(--text-color);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
             width: 90%;
-            flex-shrink: 0; /* Don't shrink when content comes */
         }
 
-        /* NEW: Typing Indicator (Loading Effect) */
-        .typing-indicator {
-            display: none; /* Hidden by default */
-            text-align: center;
-            padding: 20px 0;
-            flex-shrink: 0; /* Don't shrink when content comes */
-        }
-
-        .typing-indicator span {
-            display: inline-block;
-            background-color: var(--primary-color);
-            width: 10px;
-            height: 10px;
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid var(--spinner-color); /* Uses primary color */
             border-radius: 50%;
-            margin: 0 4px;
-            opacity: 0.4;
-            animation: bounce 1.4s infinite ease-in-out both;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+            margin: 20px auto; /* Center spinner within container */
         }
 
-        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-        .typing-indicator span:nth-child(3) { animation-delay: 0s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); opacity: 0.4; }
-            40% { transform: scale(1); opacity: 1; }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Theme Toggle Button */
@@ -273,10 +248,7 @@
 
         <div id="textOutput">
             <p id="textPlaceholder" class="placeholder-text">Your AI-generated text will appear here.</p>
-            <div id="generatedTextContent"></div> <!-- New div for dynamic content -->
-            <div class="typing-indicator" id="loadingIndicator">
-                <span></span><span></span><span></span>
-            </div>
+            <div class="spinner" id="loadingSpinner"></div>
         </div>
     </div>
 
