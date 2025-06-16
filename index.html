@@ -264,11 +264,11 @@
         /* NEW: Uiverse Loader CSS */
         .uiverse-loader {
             display: none; /* Hidden by default, shown by JS */
-            /* Absolute positioning to place it at the bottom */
+            /* Absolute positioning to place it in the middle */
             position: absolute;
-            bottom: 40px; /* Distance from the bottom */
+            top: 50%;   /* Center vertically */
             left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
+            transform: translate(-50%, -50%); /* Center horizontally and vertically */
             width: 94px; /* SVG original width */
             height: 136px; /* SVG original height */
             flex-shrink: 0; /* Don't shrink when content comes */
