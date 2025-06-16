@@ -7,7 +7,7 @@ export async function onRequestPost(context) {
   // context.env provides access to Pages project environment variables and bindings.
   // The 'AI' binding (which we configured in Pages settings) is available here.
   const AI = context.env.AI;
-  // *** FIX: Changed model to a stable, generally available text-to-image model ***
+  // Using a stable, generally available text-to-image model
   const modelName = "@cf/stabilityai/stable-diffusion-v1-5"; 
 
   // Ensure the AI binding is available
@@ -39,7 +39,7 @@ export async function onRequestPost(context) {
     const inputs = { prompt: prompt };
     console.log(`Pages Function: Calling AI.run for model: ${modelName} with prompt: "${prompt.substring(0, Math.min(prompt.length, 50))}..."`);
 
-    // *** FIX IS HERE: AI.run for image models returns a ReadableStream ***
+    // AI.run for image models returns a ReadableStream.
     // We need to read this stream into an ArrayBuffer.
     const aiResponseStream = await AI.run(modelName, inputs);
 
@@ -74,7 +74,7 @@ export async function onRequestPost(context) {
     // We wrap it in a 'result' object to match the previous structure from external APIs,
     // making it compatible with the frontend's image display logic.
     return new Response(JSON.stringify({ result: { image_base64: base64 } }), {
-      headers: { 'Content-Type': 'application/json' }, // Corrected line
+      headers: { 'Content-Type': 'application/json' },
       status: 200
     });
 
