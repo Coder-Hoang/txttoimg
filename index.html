@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text-to-Image Generator</title>
+    <style>
+        /* CSS Variables for Light Theme */
+        :root {
+            --background-color: #f9f9f9;
+            --text-color: #333;
+            --primary-color: #4CAF50; /* Green for buttons/highlights */
+            --primary-dark: #45a049;
+            --input-background: #fff;
+            --input-border: #ddd;
+            --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            --border-radius: 5px;
+            --textarea-border-color: #ddd;
+            --textarea-focus-border-color: var(--primary-color);
+            --label-color: #333;
+            --select-border-color: #ddd;
+            --select-focus-border-color: var(--primary-color);
+            --select-background: #fff;
+            --error-color: #dc2626;
+            --success-color: #16a34a;
+            --select-arrow-color: #333;
+            --dropdown-background: #fff;
+            --dropdown-text-color: #333;
+            --dropdown-border: #ddd;
+            --dropdown-hover-background: #f0f0f0;
+            --header-button-padding: 10px 15px;
+            --header-button-font-size: 16px;
+            --glass-bg: rgba(255, 255, 255, 0.07); /* Not directly used but kept */
+            --glass-border: rgba(255, 255, 255, 0.2); /* Not directly used but kept */
+            --bg-color: #f3efef; /* Specific background for body */
+            --spinner-color: var(--primary-color);
+        }
+
+        /* CSS Variables for Dark Theme */
+        [data-theme="dark"] {
+            --background-color: #1a202c; /* Main background */
+            --text-color: #f7fafc; /* Main text color */
+            --primary-color: #68d391; /* Primary buttons/highlights */
+            --primary-dark: #48bb78;
+            --input-background: #2d3748;
+            --input-border: #4a5568;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --textarea-border-color: #4a5568;
+            --textarea-focus-border-color: var(--primary-color);
+            --label-color: #f7fafc;
+            --select-border-color: #4a5568;
+            --select-focus-border-color: var(--primary-color);
+            --select-background: #2d3748;
+            --select-arrow-color: #f7fafc;
+            --dropdown-background: #2d3748;
+            --dropdown-text-color: #f7fafc;
+            --dropdown-border: #4a5568;
+            --dropdown-hover-background: #4a5568;
+            --bg-color: #140400; /* Specific background for body in dark mode */
+            --spinner-color: var(--primary-color);
+        }
+
+        /* General Body Styling */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            justify-content: center; /* Center content vertically */
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 20px auto;
+            background-color: var(--background-color);
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Spacing between elements */
+        }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: calc(100% - 20px); /* Account for padding */
+            padding: 10px;
+            border: 1px solid var(--textarea-border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--input-background);
+            color: var(--text-color);
+            font-size: 1em;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--textarea-focus-border-color);
+            box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb, 76, 175, 80), 0.2); /* Dynamic shadow */
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: var(--header-button-padding);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: var(--header-button-font-size);
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            width: auto; /* Allow button to size to content */
+            align-self: stretch; /* Stretch button to container width */
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* Image Display Area */
+        #imageOutput {
+            width: 100%;
+            min-height: 200px; /* Provide some initial height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--input-background);
+            border: 1px dashed var(--input-border);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in width */
+            overflow: hidden; /* Hide overflow from image */
+            position: relative;
+        }
+
+        #generatedImage {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            display: none; /* Hidden by default */
+        }
+
+        .placeholder-text {
+            position: absolute;
+            font-style: italic;
+            color: var(--text-color);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-top: 4px solid var(--spinner-color); /* Uses primary color */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Theme Toggle Button */
+        #themeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 50%;
+            font-size: 1.2em;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: var(--box-shadow);
+            border: 2px solid var(--input-border);
+            /* Adjust for mobile responsiveness */
+            width: 50px; /* Fixed width/height for circular button */
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #themeToggle:hover {
+            background-color: var(--primary-dark);
+            transform: scale(1.05);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+                margin: 10px auto;
+            }
+            textarea {
+                width: 100%; /* Full width on smaller screens */
+            }
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            #themeToggle {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Text-to-Image Generator</h1>
+
+        <textarea id="promptInput" placeholder="Describe the image you want to generate (e.g., 'A futuristic city at sunset, cyberpunk style, high detail')."></textarea>
+
+        <button id="generateBtn">Generate Image</button>
+
+        <div id="imageOutput">
+            <img id="generatedImage" src="" alt="Generated Image">
+            <div class="spinner" id="loadingSpinner"></div>
+            <p id="imagePlaceholder" class="placeholder-text">Your generated image will appear here.</p>
+        </div>
+    </div>
+
+    <!-- Theme Toggle Button -->
+    <button id="themeToggle">☀️</button>
+
+    <!-- Link to your JavaScript file -->
+    <script src="script.js"></script>
+</body>
+</html>
