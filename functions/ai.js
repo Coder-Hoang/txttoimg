@@ -22,25 +22,25 @@ export async function onRequestPost(context) {
     const inputs = { prompt };
     const aiResponse = await AI.run(modelName, inputs);
 
-    // Case 1: Direct image_base64
-    if (aiResponse && aiResponse.image_base64) {
-      return new Response(JSON.stringify({ result: { image_base64: aiResponse.image_base64 } }), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 200
-      });
-    }
+    // Detect raw binary response (ArrayBuffer or Uint8Array)
+    const buffer = aiResponse instanceof ArrayBuffer
+      ? new Uint8Array(aiResponse)
+      : (aiResponse instanceof Uint8Array ? aiResponse : null);
 
-    // Case 2: Raw binary image data (Uint8Array or ArrayBuffer)
-    if (aiResponse instanceof Uint8Array || aiResponse instanceof ArrayBuffer) {
-      const buffer = aiResponse instanceof ArrayBuffer ? new Uint8Array(aiResponse) : aiResponse;
-      const base64 = btoa(String.fromCharCode(...buffer));
+    if (buffer) {
+      // Convert binary to base64
+      let binary = '';
+      for (let i = 0; i < buffer.length; i++) {
+        binary += String.fromCharCode(buffer[i]);
+      }
+      const base64 = btoa(binary);
       return new Response(JSON.stringify({ result: { image_base64: base64 } }), {
         headers: { 'Content-Type': 'application/json' },
         status: 200
       });
     }
 
-    console.error("Unexpected response format from AI.run():", aiResponse);
+    console.error("Unexpected AI model output:", aiResponse);
     return new Response(JSON.stringify({ error: "Unexpected AI model output." }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500
