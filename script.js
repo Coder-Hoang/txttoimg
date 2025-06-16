@@ -3,8 +3,8 @@ let promptInput = null;
 let generateBtn = null;
 let textOutputDiv = null;
 let textPlaceholder = null;
-let uiverseLoader = null; // Correctly referencing the Uiverse SVG container
-let generatedTextContent = null; // Div for actual text output
+let uiverseLoader = null; // Correctly referencing the Uiverse SVG container from index.html
+let generatedTextContent = null; // Div for actual text output (where AI text appears)
 let themeToggleBtn = null;
 
 // --- Variable to hold the interval ID for loading phrases ---
@@ -15,8 +15,8 @@ const loadingPhrases = [
     "Thinking...",
     "Generating...",
     "Processing...",
-    "Analyzing input...",
     "Crafting response...",
+    "Analyzing input...",
     "Fetching wisdom...",
     "Almost there...",
     "Consulting neural networks...",
@@ -268,7 +268,7 @@ function toggleTheme() {
 /**
  * Initializes the theme based on saved preference or system setting.
  */
-function initializeTheme() {
+function initializeTheme() { // This function must be globally accessible or called after definition
     try {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
