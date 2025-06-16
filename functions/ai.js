@@ -7,7 +7,7 @@ export async function onRequestPost(context) {
   // context.env provides access to Pages project environment variables and bindings.
   // The 'AI' binding (which we configured in Pages settings) is available here.
   const AI = context.env.AI;
-  const modelName = "@cf/stabilityai/stable-diffusion-xl-lightning"; // Specify the model here
+  const modelName = "@cf/stabilityai/stable-diffusion-xl-base-1.0"; // Specify the model here
 
   // Ensure the AI binding is available
   if (!AI) {
