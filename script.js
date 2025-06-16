@@ -73,7 +73,6 @@ async function generateImage(prompt) {
     generateBtn.disabled = true; // Disable button during generation
     generateBtn.textContent = 'Generating...';
 
-    // *** IMPORTANT CHANGE HERE ***
     // Now we call our Pages Function directly at the /ai path.
     // The Pages Function (functions/ai.js) will then handle the AI model call.
     const apiUrl = `/ai`;
@@ -89,18 +88,20 @@ async function generateImage(prompt) {
         });
 
         if (!response.ok) {
-            // If the response is not OK (e.g., 4xx, 5xx), try to read it as text first.
-            // This helps debug "Unexpected end of JSON input" if the server sends non-JSON errors.
             const errorText = await response.text();
             let errorData = {};
+            let errorMessage = `Server error (Status: ${response.status} ${response.statusText || 'Unknown'}): `;
+
             try {
                 errorData = JSON.parse(errorText);
+                // Prefer 'error' property from Pages Function, then 'message', then default
+                errorMessage += errorData.error || errorData.message || 'Unknown error from JSON';
             } catch (jsonError) {
                 console.error("Failed to parse error response as JSON:", jsonError, "Raw text:", errorText);
-                errorData.message = `Non-JSON error response from server: ${errorText.substring(0, 100)}...`; // Truncate for display
+                errorMessage += `Non-JSON response from server: ${errorText.substring(0, Math.min(errorText.length, 100))}...`; // Truncate for display
             }
+            
             console.error('API Error Response:', response.status, response.statusText, errorData);
-            const errorMessage = errorData.error ? errorData.error.message : errorData.message || response.statusText || 'Unknown error';
             throw new Error(`Image generation failed: ${errorMessage}`);
         }
 
