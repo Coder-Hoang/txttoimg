@@ -99,7 +99,7 @@ function formatAiText(inputText) {
     // The `g` flag ensures all matches are found, not just the first.
     // The `*?` makes the match non-greedy, so it stops at the first `**`.
     // The content inside the parentheses `(.*?)` is captured as a group.
-    const formattedText = inputText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    const formattedText = inputText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
     return formattedText;
 }
 
