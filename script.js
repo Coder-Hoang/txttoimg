@@ -7,6 +7,9 @@ let uiverseLoader = null; // Correctly referencing the Uiverse SVG container
 let generatedTextContent = null; // Div for actual text output
 let themeToggleBtn = null;
 
+// --- Variable to hold the interval ID for loading phrases ---
+let loadingTextIntervalId = null;
+
 // --- Array of loading phrases for the button ---
 const loadingPhrases = [
     "Thinking...",
@@ -92,7 +95,11 @@ async function generateText(prompt) {
 
     if (generateBtn) {
         generateBtn.disabled = true;
-        generateBtn.textContent = getRandomLoadingPhrase();
+        // Start cycling through loading phrases
+        generateBtn.textContent = getRandomLoadingPhrase(); // Set initial phrase immediately
+        loadingTextIntervalId = setInterval(() => {
+            generateBtn.textContent = getRandomLoadingPhrase();
+        }, 2000); // Change phrase every 2 seconds
     } else {
         console.error("Generate button (generateBtn) is null in generateText function.");
         showMessage("Application error: Generate button not found.", "error");
@@ -141,6 +148,12 @@ async function generateText(prompt) {
         console.error('Error calling Pages Function:', error);
         showMessage(`Error: ${error.message}`, 'error');
     } finally {
+        // Clear the interval when generation is complete (or fails)
+        if (loadingTextIntervalId) {
+            clearInterval(loadingTextIntervalId);
+            loadingTextIntervalId = null; // Reset the ID
+        }
+
         if (uiverseLoader) uiverseLoader.style.display = 'none'; // Correctly use uiverseLoader
         if (generateBtn) {
             generateBtn.disabled = false;
@@ -198,7 +211,7 @@ function toggleTheme() {
 /**
  * Initializes the theme based on saved preference or system setting.
  */
-function initializeTheme() { // This function must be globally accessible or called after definition
+function initializeTheme() {
     try {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
@@ -244,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (promptInput) {
         promptInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' && event.shiftKey) { // Shift+Enter for new line
-                // Allow default new line behavior
+                // Allow default new line behavior for Shift+Enter
             } else if (event.key === 'Enter') { // Only Enter to generate
                 event.preventDefault(); // Prevent default Enter (new line)
                 if (generateBtn) generateBtn.click(); // Trigger button click
