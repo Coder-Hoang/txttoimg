@@ -1,5 +1,4 @@
 // --- Global DOM Element Variables (will be assigned in DOMContentLoaded) ---
-// Declared with 'let' and initialized to null, then assigned inside DOMContentLoaded
 let promptInput = null;
 let generateBtn = null;
 let textOutputDiv = null;
@@ -7,6 +6,26 @@ let textPlaceholder = null;
 let uiverseLoader = null; // Correctly referencing the Uiverse SVG container
 let generatedTextContent = null; // Div for actual text output
 let themeToggleBtn = null;
+
+// --- Array of loading phrases for the button ---
+const loadingPhrases = [
+    "Thinking...",
+    "Generating...",
+    "Processing...",
+    "Crafting response...",
+    "Analyzing input...",
+    "Fetching wisdom...",
+    "Almost there..."
+];
+
+/**
+ * Gets a random loading phrase from the defined array.
+ * @returns {string} A random loading phrase.
+ */
+function getRandomLoadingPhrase() {
+    const randomIndex = Math.floor(Math.random() * loadingPhrases.length);
+    return loadingPhrases[randomIndex];
+}
 
 // --- Utility function for showing messages (instead of alert) ---
 function showMessage(message, type = 'info') {
@@ -67,24 +86,20 @@ function showMessage(message, type = 'info') {
  */
 async function generateText(prompt) {
     // Clear previous text, hide placeholder, show loading indicator
-    // Ensure these elements are not null before trying to access their properties
-    if (generatedTextContent) generatedTextContent.textContent = ''; // Clear existing text content
-    if (textPlaceholder) textPlaceholder.style.display = 'none'; // Hide the placeholder text
-    if (uiverseLoader) uiverseLoader.style.display = 'block'; // Show the Uiverse SVG loader
+    if (generatedTextContent) generatedTextContent.textContent = '';
+    if (textPlaceholder) textPlaceholder.style.display = 'none';
+    if (uiverseLoader) uiverseLoader.style.display = 'block'; // Correctly use uiverseLoader
+
     if (generateBtn) {
-        generateBtn.disabled = true; // Disable button during generation
-        generateBtn.textContent = 'Generating...'; // Keep button text as Generating...
+        generateBtn.disabled = true;
+        generateBtn.textContent = getRandomLoadingPhrase();
     } else {
         console.error("Generate button (generateBtn) is null in generateText function.");
         showMessage("Application error: Generate button not found.", "error");
-        return; // Exit if critical element is missing
+        return;
     }
 
-
-    // Call our Pages Function at the /generate-text path.
     const apiUrl = `/generate-text`;
-
-    // The payload for our Pages Function is just the prompt
     const payload = { prompt: prompt };
 
     try {
@@ -113,12 +128,10 @@ async function generateText(prompt) {
 
         const result = await response.json();
         
-        // Debug logging to see what we're actually getting
         console.log('Full response from Pages Function:', result);
 
-        // Cloudflare Workers AI LLM responses typically have 'response' property
         if (result && result.response && typeof result.response === 'string') {
-            if (generatedTextContent) generatedTextContent.textContent = result.response; // Display the AI's response in the new div
+            if (generatedTextContent) generatedTextContent.textContent = result.response;
             showMessage('Text generated successfully!', 'success');
         } else {
             console.error('Unexpected response structure from Pages Function:', result);
@@ -128,14 +141,13 @@ async function generateText(prompt) {
         console.error('Error calling Pages Function:', error);
         showMessage(`Error: ${error.message}`, 'error');
     } finally {
-        if (uiverseLoader) uiverseLoader.style.display = 'none'; // Hide Uiverse loader
+        if (uiverseLoader) uiverseLoader.style.display = 'none'; // Correctly use uiverseLoader
         if (generateBtn) {
-            generateBtn.disabled = false; // Re-enable button
-            generateBtn.textContent = 'Generate Text';
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate Text'; // Reset button text
         }
-        // Show placeholder if no text was successfully displayed
         if (generatedTextContent && !generatedTextContent.textContent.trim()) {
-            if (textPlaceholder) textPlaceholder.style.display = 'block'; // Show placeholder if content is empty
+            if (textPlaceholder) textPlaceholder.style.display = 'block';
         }
     }
 }
@@ -147,24 +159,22 @@ async function generateText(prompt) {
  * @param {string} theme - 'light' or 'dark'.
  */
 function setTheme(theme) {
-    try { // Wrap localStorage operations in a try-catch block for robustness
+    try {
         if (theme === 'dark') {
             document.documentElement.setAttribute('data-theme', 'dark');
             localStorage.setItem('theme', 'dark');
             if (themeToggleBtn) {
-                themeToggleBtn.textContent = '🌙'; // Moon icon for dark mode
+                themeToggleBtn.textContent = '🌙';
             }
         } else {
             document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('theme', 'light');
             if (themeToggleBtn) {
-                themeToggleBtn.textContent = '☀️'; // Sun icon for light mode
+                themeToggleBtn.textContent = '☀️';
             }
         }
     } catch (e) {
         console.error("Error accessing localStorage for theme toggle:", e);
-        // Show a message to the user that theme saving is disabled if it's the first time trying to save
-        // We avoid showing this on every page load during initialization
     }
 }
 
@@ -172,7 +182,7 @@ function setTheme(theme) {
  * Toggles the theme between light and dark.
  */
 function toggleTheme() {
-    try { // Wrap localStorage operations in a try-catch block for robustness
+    try {
         const currentTheme = localStorage.getItem('theme');
         if (currentTheme === 'dark') {
             setTheme('light');
@@ -185,6 +195,25 @@ function toggleTheme() {
     }
 }
 
+/**
+ * Initializes the theme based on saved preference or system setting.
+ */
+function initializeTheme() { // This function must be globally accessible or called after definition
+    try {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+        } else {
+            setTheme('light');
+        }
+    } catch (e) {
+        console.error("Error initializing theme due to localStorage access:", e);
+    }
+}
+
+
 // --- Initialize Application on Page Load ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("Text Generator App: DOM Content Loaded. Initializing app.");
@@ -194,11 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
     generateBtn = document.getElementById('generateBtn');
     textOutputDiv = document.getElementById('textOutput');
     textPlaceholder = document.getElementById('textPlaceholder');
-    uiverseLoader = document.getElementById('uiverseLoader'); // Correctly retrieve the Uiverse SVG container
+    uiverseLoader = document.getElementById('uiverseLoader'); // Correctly target uiverseLoader
     generatedTextContent = document.getElementById('generatedTextContent');
     themeToggleBtn = document.getElementById('themeToggle');
 
-    // Add event listeners AFTER elements are assigned
+    // Add event listeners AFTER elements are assigned and checked for existence
     if (generateBtn) {
         generateBtn.addEventListener('click', () => {
             const prompt = promptInput.value.trim();
@@ -214,9 +243,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (promptInput) {
         promptInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !event.shiftKey) { // Shift+Enter for new line
-                event.preventDefault(); // Prevent new line
-                if (generateBtn) generateBtn.click(); // Trigger button click, ensure generateBtn is not null
+            if (event.key === 'Enter' && event.shiftKey) { // Shift+Enter for new line
+                // Allow default new line behavior
+            } else if (event.key === 'Enter') { // Only Enter to generate
+                event.preventDefault(); // Prevent default Enter (new line)
+                if (generateBtn) generateBtn.click(); // Trigger button click
             }
         });
     } else {
@@ -229,5 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Theme toggle button with ID 'themeToggle' not found in HTML.");
     }
 
-    initializeTheme(); // Set up the theme now that themeToggleBtn is assigned
+    // Initialize theme after all related elements are assigned
+    initializeTheme(); 
 });
