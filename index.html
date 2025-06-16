@@ -262,18 +262,19 @@
         }
 
         /* NEW: Uiverse Loader CSS */
-         .uiverse-loader {
-            display: none; /* Hidden by default, shown by JS */
-            position: absolute;
-            bottom: 40px; /* Distance from the bottom */
-            left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
-            width: 94px; /* SVG original width */
-            height: 136px; /* SVG original height */
-            flex-shrink: 0; /* Don't shrink when content comes */
-            overflow: visible; /* Allow animations to extend beyond bounds */
-            zoom: 0.6; /* Make it smaller */
-        }
+        .uiverse-loader {
+            display: none; /* Hidden by default, shown by JS */
+            /* Absolute positioning to place it at the bottom */
+            position: absolute;
+            bottom: 40px; /* Distance from the bottom */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            width: 94px; /* SVG original width */
+            height: 136px; /* SVG original height */
+            flex-shrink: 0; /* Don't shrink when content comes */
+            overflow: visible; /* Allow animations to extend beyond bounds */
+            zoom: 0.6; /* Make it smaller */
+        }
 
         @keyframes fade-particles {
             0%, 100% { opacity: 1; }
