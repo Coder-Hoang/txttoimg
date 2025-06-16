@@ -86,7 +86,9 @@ export async function onRequestPost(context) {
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
 
     console.error("Pages Function: Error caught in onRequestPost:", errorName, errorMessage, errorStack);
-    // Return a structured JSON error response to the frontend
+    // *** IMPORTANT: The '5007: No such model' error originates directly from Cloudflare Workers AI. ***
+    // This typically means the specific model is not available to your account or in your region,
+    // or requires an explicit opt-in. This is a platform-level issue, not a code bug.
     return new Response(JSON.stringify({
       error: `Pages Function internal error: ${errorMessage}`,
       details: errorStack
