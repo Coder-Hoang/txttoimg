@@ -61,8 +61,8 @@ function showMessage(message, type = 'info') {
 // --- Image Generation Logic ---
 
 /**
- * Generates an image using the Imagen 3.0 model via the Gemini API.
- * The API key is left empty; Canvas will inject it at runtime for allowed models.
+ * Generates an image using a Cloudflare Workers AI model.
+ * This function will make a request to a Workers AI endpoint proxied by Cloudflare Pages.
  * @param {string} prompt - The text description for the image.
  * @returns {string|null} Base64 encoded image URL or null on failure.
  */
@@ -74,9 +74,20 @@ async function generateImage(prompt) {
     generateBtn.disabled = true; // Disable button during generation
     generateBtn.textContent = 'Generating...';
 
-    const payload = { instances: { prompt: prompt }, parameters: { "sampleCount": 1 } };
-    const apiKey = ""; // Canvas will automatically provide the API key for imagen-3.0-generate-002
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+    // The model to use from Cloudflare Workers AI
+    const modelName = "@cf/stabilityai/stable-diffusion-xl-lightning";
+    // The API endpoint for Workers AI when accessed via Pages binding
+    // This assumes you will set up a 'compatibility_date' in your Pages project
+    // that allows direct access to Workers AI via '/ai/run' or similar routes.
+    // However, the standard practice is to use a Worker binding.
+    // For this specific setup, we'll assume a direct call from the Pages frontend
+    // will be routed by Cloudflare's internal mechanisms or via a binding.
+    // The most reliable way is still through a dedicated Worker as a proxy if direct routing fails.
+    // For direct use from Pages, you generally point to '/ai/run/<model-name>' relative to your Pages URL
+    const apiUrl = `/ai/run/${modelName}`; // This path assumes a Cloudflare Pages direct binding for Workers AI
+
+    // The payload for Workers AI text-to-image models
+    const payload = { prompt: prompt }; // Workers AI models usually expect a simpler 'prompt' key
 
     try {
         const response = await fetch(apiUrl, {
@@ -87,25 +98,27 @@ async function generateImage(prompt) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error('API Error:', errorData);
-            throw new Error(`API request failed: ${errorData.error ? errorData.error.message : response.statusText}`);
+            console.error('Workers AI Error:', errorData);
+            const errorMessage = errorData.error ? errorData.error.message : response.statusText;
+            throw new Error(`Image generation failed: ${errorMessage}`);
         }
 
         const result = await response.json();
 
-        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-            const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+        // Cloudflare Workers AI image generation returns an array of base64 images
+        if (result.result && result.result.image_base64) {
+            const imageUrl = `data:image/png;base64,${result.result.image_base64}`;
             generatedImage.src = imageUrl;
             generatedImage.style.display = 'block'; // Show the generated image
             showMessage('Image generated successfully!', 'success');
             return imageUrl;
         } else {
-            console.error('Unexpected API response structure:', result);
-            showMessage('Could not generate image. Unexpected response.', 'error');
+            console.error('Unexpected Workers AI response structure:', result);
+            showMessage('Could not generate image. Unexpected response from AI.', 'error');
             return null;
         }
     } catch (error) {
-        console.error('Error generating image:', error);
+        console.error('Error calling Workers AI:', error);
         showMessage(`Error: ${error.message}`, 'error');
         return null;
     } finally {
