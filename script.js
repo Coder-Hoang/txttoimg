@@ -106,18 +106,48 @@ async function generateImage(prompt) {
         }
 
         const result = await response.json();
+        
+        // Debug logging to see what we're actually getting
+        console.log('Full response from Pages Function:', result);
+        console.log('result.result:', result.result);
+        if (result.result) {
+            console.log('result.result.image_base64 exists:', 'image_base64' in result.result);
+            console.log('result.result.image_base64 length:', result.result.image_base64?.length);
+            console.log('result.result.image_base64 type:', typeof result.result.image_base64);
+        }
 
         // Cloudflare Workers AI image generation (via Pages Function) returns an object with image_base64.
         // The structure is { result: { image_base64: "..." } }
         // Our Pages Function should ensure this structure is passed back.
-        if (result.result && result.result.image_base64) {
-            const imageUrl = `data:image/png;base64,${result.result.image_base64}`;
-            generatedImage.src = imageUrl;
-            generatedImage.style.display = 'block'; // Show the generated image
-            showMessage('Image generated successfully!', 'success');
-            return imageUrl;
+        if (result.result && 'image_base64' in result.result && result.result.image_base64) {
+            const base64Data = result.result.image_base64;
+            
+            // Validate that we actually have base64 data
+            if (typeof base64Data === 'string' && base64Data.length > 0) {
+                const imageUrl = `data:image/png;base64,${base64Data}`;
+                generatedImage.src = imageUrl;
+                generatedImage.style.display = 'block'; // Show the generated image
+                showMessage('Image generated successfully!', 'success');
+                return imageUrl;
+            } else {
+                console.error('image_base64 is empty or not a string:', base64Data);
+                showMessage('Generated image data is empty or invalid.', 'error');
+                return null;
+            }
         } else {
             console.error('Unexpected response structure from Pages Function:', result);
+            console.error('Expected: { result: { image_base64: "..." } }');
+            
+            // More detailed error reporting
+            if (!result.result) {
+                console.error('Missing result property');
+            } else if (!('image_base64' in result.result)) {
+                console.error('Missing image_base64 property in result');
+                console.error('Available properties in result.result:', Object.keys(result.result));
+            } else if (!result.result.image_base64) {
+                console.error('image_base64 property exists but is falsy:', result.result.image_base64);
+            }
+            
             showMessage('Could not generate image. Unexpected response from Pages Function.', 'error');
             return null;
         }
