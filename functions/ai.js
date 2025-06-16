@@ -11,7 +11,7 @@ export async function onRequestPost(context) {
 
   // Ensure the AI binding is available
   if (!AI) {
-    console.error("Cloudflare AI binding (env.AI) is not available in Pages Function.");
+    console.error("Cloudflare AI binding (env.AI) is not available in Pages Function. Check Pages settings for 'AI' binding.");
     return new Response(JSON.stringify({ error: "AI service not configured correctly. Missing 'AI' binding." }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500
@@ -36,7 +36,7 @@ export async function onRequestPost(context) {
     // Call the Cloudflare Workers AI model using the AI binding.
     // The .run() method takes the model name and the inputs for the model.
     const inputs = { prompt: prompt };
-    console.log(`Pages Function: Calling AI.run for model: ${modelName} with prompt: "${prompt.substring(0, 50)}..."`);
+    console.log(`Pages Function: Calling AI.run for model: ${modelName} with prompt: "${prompt.substring(0, Math.min(prompt.length, 50))}..."`);
     const aiResponse = await AI.run(modelName, inputs); // AI.run returns the model's output directly
 
     // Cloudflare Workers AI image generation models return an object with image_base64.
@@ -52,7 +52,7 @@ export async function onRequestPost(context) {
       });
     } else {
       // Log an unexpected response from the AI model itself.
-      console.error("Pages Function: Unexpected AI model response structure or missing image_base64:", aiResponse);
+      console.error("Pages Function: Unexpected AI model response structure or missing image_base64.", aiResponse);
       return new Response(JSON.stringify({ error: "AI model returned an unexpected response format or no image data." }), {
         headers: { 'Content-Type': 'application/json' },
         status: 500
@@ -61,11 +61,16 @@ export async function onRequestPost(context) {
 
   } catch (error) {
     // Catch any errors during request parsing or AI model execution.
-    console.error("Pages Function: Error caught in onRequestPost:", error.name, error.message, error.stack);
+    // Ensure error.message exists
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+
+    console.error("Pages Function: Error caught in onRequestPost:", errorName, errorMessage, errorStack);
     // Return a structured JSON error response to the frontend
     return new Response(JSON.stringify({
-      error: `Pages Function internal error: ${error.message || "Unknown error"}`,
-      details: error.stack || "No stack trace available"
+      error: `Pages Function internal error: ${errorMessage}`,
+      details: errorStack
     }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500
