@@ -1,6 +1,6 @@
 export async function onRequestPost(context) {
   const AI = context.env.AI;
-  const modelName = "@cf/stabilityai/stable-diffusion-xl-base-1.0";
+  const modelName = "@cf/stabilityai/stable-diffusion-xl-base-1.0"; // Use a working model
 
   if (!AI) {
     return new Response(JSON.stringify({ error: "AI binding not available." }), {
@@ -20,34 +20,36 @@ export async function onRequestPost(context) {
     }
 
     const inputs = { prompt };
-    const aiResponse = await AI.run(modelName, inputs);
+    const result = await AI.run(modelName, inputs);
 
-    // Detect raw binary response (ArrayBuffer or Uint8Array)
-    const buffer = aiResponse instanceof ArrayBuffer
-      ? new Uint8Array(aiResponse)
-      : (aiResponse instanceof Uint8Array ? aiResponse : null);
+    let buffer;
 
-    if (buffer) {
-      // Convert binary to base64
-      let binary = '';
-      for (let i = 0; i < buffer.length; i++) {
-        binary += String.fromCharCode(buffer[i]);
-      }
-      const base64 = btoa(binary);
-      return new Response(JSON.stringify({ result: { image_base64: base64 } }), {
+    if (result instanceof ArrayBuffer) {
+      buffer = new Uint8Array(result);
+    } else if (result instanceof Uint8Array) {
+      buffer = result;
+    } else if (result && result.arrayBuffer instanceof Function) {
+      // If result is a Response-like object
+      buffer = new Uint8Array(await result.arrayBuffer());
+    } else {
+      console.error("Unexpected AI model output:", result);
+      return new Response(JSON.stringify({ error: "Unexpected AI model output." }), {
         headers: { 'Content-Type': 'application/json' },
-        status: 200
+        status: 500
       });
     }
 
-    console.error("Unexpected AI model output:", aiResponse);
-    return new Response(JSON.stringify({ error: "Unexpected AI model output." }), {
+    // Convert buffer to base64
+    const binary = Array.from(buffer).map(b => String.fromCharCode(b)).join('');
+    const base64 = btoa(binary);
+
+    return new Response(JSON.stringify({ result: { image_base64: base64 } }), {
       headers: { 'Content-Type': 'application/json' },
-      status: 500
+      status: 200
     });
 
   } catch (err) {
-    console.error("AI error:", err);
+    console.error("AI Function Error:", err);
     return new Response(JSON.stringify({ error: err.message || "Unknown error" }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500
