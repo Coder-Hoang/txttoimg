@@ -66,75 +66,27 @@ function showMessage(message, type = 'info') {
  * @returns {string|null} Base64 encoded image URL or null on failure.
  */
 async function generateImage(prompt) {
-    // Hide previous image, show spinner, hide placeholder
-    generatedImage.style.display = 'none';
-    imagePlaceholder.style.display = 'none';
-    loadingSpinner.style.display = 'block';
-    generateBtn.disabled = true; // Disable button during generation
-    generateBtn.textContent = 'Generating...';
+  const response = await fetch("/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
 
-    // Now we call our Pages Function directly at the /ai path.
-    // The Pages Function (functions/ai.js) will then handle the AI model call.
-    const apiUrl = `/ai`;
+  const data = await response.json();
 
-    // The payload for our Pages Function is just the prompt
-    const payload = { prompt: prompt };
+  if (data.error) {
+    console.error("API Error Response:", data);
+    throw new Error("Image generation failed: " + data.error);
+  }
 
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+  if (!data.result || !data.result.image_base64) {
+    throw new Error("Unexpected response structure from Pages Function: " + JSON.stringify(data));
+  }
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            let errorData = {};
-            let errorMessage = `Server error (Status: ${response.status} ${response.statusText || 'Unknown'}): `;
-
-            try {
-                errorData = JSON.parse(errorText);
-                // Prefer 'error' property from Pages Function, then 'message', then default
-                errorMessage += errorData.error || errorData.message || 'Unknown error from JSON';
-            } catch (jsonError) {
-                console.error("Failed to parse error response as JSON:", jsonError, "Raw text:", errorText);
-                errorMessage += `Non-JSON response from server: ${errorText.substring(0, Math.min(errorText.length, 100))}...`; // Truncate for display
-            }
-            
-            console.error('API Error Response:', response.status, response.statusText, errorData);
-            throw new Error(`Image generation failed: ${errorMessage}`);
-        }
-
-        const result = await response.json();
-
-        // Cloudflare Workers AI image generation (via Pages Function) returns an object with image_base64.
-        // The structure is { result: { image_base64: "..." } }
-        // Our Pages Function should ensure this structure is passed back.
-        if (result.result && result.result.image_base64) {
-            const imageUrl = `data:image/png;base64,${result.result.image_base64}`;
-            generatedImage.src = imageUrl;
-            generatedImage.style.display = 'block'; // Show the generated image
-            showMessage('Image generated successfully!', 'success');
-            return imageUrl;
-        } else {
-            console.error('Unexpected response structure from Pages Function:', result);
-            showMessage('Could not generate image. Unexpected response from Pages Function.', 'error');
-            return null;
-        }
-    } catch (error) {
-        console.error('Error calling Pages Function:', error);
-        showMessage(`Error: ${error.message}`, 'error');
-        return null;
-    } finally {
-        loadingSpinner.style.display = 'none'; // Hide spinner
-        generateBtn.disabled = false; // Re-enable button
-        generateBtn.textContent = 'Generate Image';
-        // Only show placeholder if no image was successfully displayed
-        if (!generatedImage.src || generatedImage.style.display === 'none') {
-            imagePlaceholder.style.display = 'block';
-        }
-    }
+  const base64 = data.result.image_base64;
+  return `data:image/png;base64,${base64}`;
 }
+
 
 // --- Event Listeners ---
 
