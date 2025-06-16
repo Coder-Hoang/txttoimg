@@ -33,25 +33,25 @@
             --glass-bg: rgba(255, 255, 255, 0.07); /* Not directly used but kept */
             --glass-border: rgba(255, 255, 255, 0.2); /* Not directly used but kept */
             --bg-color: #f3efef; /* Specific background for body */
-            /* Uiverse loader colors, adjust if needed for theme */
-            --uiverse-stroke-1: #4B22B5; /* Darker purple for main lines */
-            --uiverse-stroke-2: #5728CC; /* Lighter purple for main lines */
-            --uiverse-fill-1: #5727CC; /* Fill color 1 */
-            --uiverse-fill-2: #4354BF; /* Fill color 2 */
-            --uiverse-fill-3: #4559C4; /* Fill color 3 */
-            --uiverse-fill-4: #332C94; /* Fill color 4 */
-            --uiverse-fill-5: #91DDFB; /* Fill color 5 (light blue) */
-            --uiverse-fill-6: #8841D5; /* Fill color 6 */
-            --uiverse-fill-7: #5927CE; /* Fill color 7 */
-            --uiverse-fill-8: #91DDFB; /* Fill color 8 */
-            --uiverse-fill-9: #489CB7; /* Fill color 9 */
-            --uiverse-fill-10: #F4F4F4; /* Fill color 10 */
-            --uiverse-fill-11: #332C94; /* Fill color 11 */
-            --uiverse-fill-12: #5E5E5E; /* Fill color 12 */
-            --uiverse-fill-13: #71B1C6; /* Fill color 13 */
-            --uiverse-fill-14: #80C0D4; /* Fill color 14 */
-            --uiverse-fill-15: #89D3EB; /* Fill color 15 */
-            --uiverse-fill-16: #97E6FF; /* Fill color 16 */
+            /* Uiverse loader colors, adjusted for better theme integration */
+            --uiverse-stroke-1-light: #4B22B5; 
+            --uiverse-stroke-2-light: #5728CC;
+            --uiverse-fill-1-light: #5727CC;
+            --uiverse-fill-2-light: #4354BF;
+            --uiverse-fill-3-light: #4559C4;
+            --uiverse-fill-4-light: #332C94;
+            --uiverse-fill-5-light: #91DDFB;
+            --uiverse-fill-6-light: #8841D5;
+            --uiverse-fill-7-light: #5927CE;
+            --uiverse-fill-8-light: #91DDFB;
+            --uiverse-fill-9-light: #489CB7;
+            --uiverse-fill-10-light: #F4F4F4;
+            --uiverse-fill-11-light: #332C94;
+            --uiverse-fill-12-light: #5E5E5E;
+            --uiverse-fill-13-light: #71B1C6;
+            --uiverse-fill-14-light: #80C0D4;
+            --uiverse-fill-15-light: #89D3EB;
+            --uiverse-fill-16-light: #97E6FF;
         }
 
         /* CSS Variables for Dark Theme */
@@ -76,25 +76,68 @@
             --dropdown-hover-background: #4a5568;
             --bg-color: #140400; /* Specific background for body in dark mode */
             /* Uiverse loader colors for dark theme, adjusted for better visibility */
-            --uiverse-stroke-1: #68d391; /* Light green */
-            --uiverse-stroke-2: #48bb78; /* Darker green */
-            --uiverse-fill-1: #48bb78;
-            --uiverse-fill-2: #68d391;
-            --uiverse-fill-3: #48bb78;
-            --uiverse-fill-4: #68d391;
-            --uiverse-fill-5: #9be9a8; /* Very light green */
-            --uiverse-fill-6: #9be9a8;
-            --uiverse-fill-7: #48bb78;
-            --uiverse-fill-8: #9be9a8;
-            --uiverse-fill-9: #48bb78;
-            --uiverse-fill-10: #f7fafc; /* White */
-            --uiverse-fill-11: #68d391;
-            --uiverse-fill-12: #9b9b9b;
-            --uiverse-fill-13: #a8d5af;
-            --uiverse-fill-14: #b8e6c0;
-            --uiverse-fill-15: #c8f7d0;
-            --uiverse-fill-16: #d8ffe0;
+            --uiverse-stroke-1-dark: #68d391;
+            --uiverse-stroke-2-dark: #48bb78;
+            --uiverse-fill-1-dark: #48bb78;
+            --uiverse-fill-2-dark: #68d391;
+            --uiverse-fill-3-dark: #48bb78;
+            --uiverse-fill-4-dark: #68d391;
+            --uiverse-fill-5-dark: #9be9a8;
+            --uiverse-fill-6-dark: #9be9a8;
+            --uiverse-fill-7-dark: #48bb78;
+            --uiverse-fill-8-dark: #9be9a8;
+            --uiverse-fill-9-dark: #48bb78;
+            --uiverse-fill-10-dark: #f7fafc;
+            --uiverse-fill-11-dark: #68d391;
+            --uiverse-fill-12-dark: #9b9b9b;
+            --uiverse-fill-13-dark: #a8d5af;
+            --uiverse-fill-14-dark: #b8e6c0;
+            --uiverse-fill-15-dark: #c8f7d0;
+            --uiverse-fill-16-dark: #d8ffe0;
         }
+
+        /* Dynamically apply Uiverse colors based on theme */
+        [data-theme="light"] {
+            --uiverse-stroke-1: var(--uiverse-stroke-1-light);
+            --uiverse-stroke-2: var(--uiverse-stroke-2-light);
+            --uiverse-fill-1: var(--uiverse-fill-1-light);
+            --uiverse-fill-2: var(--uiverse-fill-2-light);
+            --uiverse-fill-3: var(--uiverse-fill-3-light);
+            --uiverse-fill-4: var(--uiverse-fill-4-light);
+            --uiverse-fill-5: var(--uiverse-fill-5-light);
+            --uiverse-fill-6: var(--uiverse-fill-6-light);
+            --uiverse-fill-7: var(--uiverse-fill-7-light);
+            --uiverse-fill-8: var(--uiverse-fill-8-light);
+            --uiverse-fill-9: var(--uiverse-fill-9-light);
+            --uiverse-fill-10: var(--uiverse-fill-10-light);
+            --uiverse-fill-11: var(--uiverse-fill-11-light);
+            --uiverse-fill-12: var(--uiverse-fill-12-light);
+            --uiverse-fill-13: var(--uiverse-fill-13-light);
+            --uiverse-fill-14: var(--uiverse-fill-14-light);
+            --uiverse-fill-15: var(--uiverse-fill-15-light);
+            --uiverse-fill-16: var(--uiverse-fill-16-light);
+        }
+        [data-theme="dark"] {
+            --uiverse-stroke-1: var(--uiverse-stroke-1-dark);
+            --uiverse-stroke-2: var(--uiverse-stroke-2-dark);
+            --uiverse-fill-1: var(--uiverse-fill-1-dark);
+            --uiverse-fill-2: var(--uiverse-fill-2-dark);
+            --uiverse-fill-3: var(--uiverse-fill-3-dark);
+            --uiverse-fill-4: var(--uiverse-fill-4-dark);
+            --uiverse-fill-5: var(--uiverse-fill-5-dark);
+            --uiverse-fill-6: var(--uiverse-fill-6-dark);
+            --uiverse-fill-7: var(--uiverse-fill-7-dark);
+            --uiverse-fill-8: var(--uiverse-fill-8-dark);
+            --uiverse-fill-9: var(--uiverse-fill-9-dark);
+            --uiverse-fill-10: var(--uiverse-fill-10-dark);
+            --uiverse-fill-11: var(--uiverse-fill-11-dark);
+            --uiverse-fill-12: var(--uiverse-fill-12-dark);
+            --uiverse-fill-13: var(--uiverse-fill-13-dark);
+            --uiverse-fill-14: var(--uiverse-fill-14-dark);
+            --uiverse-fill-15: var(--uiverse-fill-15-dark);
+            --uiverse-fill-16: var(--uiverse-fill-16-dark);
+        }
+
 
         /* General Body Styling */
         body {
