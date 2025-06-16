@@ -212,10 +212,12 @@ async function generateText(prompt) {
 
         if (result && result.response && typeof result.response === 'string') {
             if (generatedTextContent) {
-                // Apply the formatting function to the AI's response
+                // *** THIS IS THE CRITICAL CHANGE ***
+                // Apply the formatting function to the AI's raw response
                 const rawAiText = result.response;
                 const formattedHtmlText = formatAiText(rawAiText);
-                generatedTextContent.innerHTML = formattedHtmlText; // Set as innerHTML to render bold tags
+                // Set the innerHTML of the content div to render the bold tags
+                generatedTextContent.innerHTML = formattedHtmlText;
             }
             showMessage('Text generated successfully!', 'success');
         } else {
