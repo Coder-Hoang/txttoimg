@@ -77,17 +77,11 @@ async function generateImage(prompt) {
     // The model to use from Cloudflare Workers AI
     const modelName = "@cf/stabilityai/stable-diffusion-xl-lightning";
     // The API endpoint for Workers AI when accessed via Pages binding
-    // This assumes you will set up a 'compatibility_date' in your Pages project
-    // that allows direct access to Workers AI via '/ai/run' or similar routes.
-    // However, the standard practice is to use a Worker binding.
-    // For this specific setup, we'll assume a direct call from the Pages frontend
-    // will be routed by Cloudflare's internal mechanisms or via a binding.
-    // The most reliable way is still through a dedicated Worker as a proxy if direct routing fails.
-    // For direct use from Pages, you generally point to '/ai/run/<model-name>' relative to your Pages URL
-    const apiUrl = `/ai/run/${modelName}`; // This path assumes a Cloudflare Pages direct binding for Workers AI
+    // This path assumes a Cloudflare Pages direct binding for Workers AI
+    const apiUrl = `/ai/run/${modelName}`;
 
     // The payload for Workers AI text-to-image models
-    const payload = { prompt: prompt }; // Workers AI models usually expect a simpler 'prompt' key
+    const payload = { prompt: prompt };
 
     try {
         const response = await fetch(apiUrl, {
@@ -97,15 +91,24 @@ async function generateImage(prompt) {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Workers AI Error:', errorData);
-            const errorMessage = errorData.error ? errorData.error.message : response.statusText;
+            // If the response is not OK (e.g., 4xx, 5xx), try to read it as text first
+            // This helps debug "Unexpected end of JSON input" if the server sends non-JSON errors
+            const errorText = await response.text();
+            let errorData = {};
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (jsonError) {
+                console.error("Failed to parse error response as JSON:", jsonError, "Raw text:", errorText);
+                errorData.message = `Non-JSON error response: ${errorText.substring(0, 100)}...`;
+            }
+            console.error('Workers AI Error Response:', response.status, response.statusText, errorData);
+            const errorMessage = errorData.message || response.statusText || 'Unknown error';
             throw new Error(`Image generation failed: ${errorMessage}`);
         }
 
         const result = await response.json();
 
-        // Cloudflare Workers AI image generation returns an array of base64 images
+        // Cloudflare Workers AI image generation returns an object with image_base64
         if (result.result && result.result.image_base64) {
             const imageUrl = `data:image/png;base64,${result.result.image_base64}`;
             generatedImage.src = imageUrl;
