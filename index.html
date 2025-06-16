@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text-to-Image Generator</title>
+    <title>Cloudflare AI Text Generator</title>
     <style>
         /* CSS Variables for Light Theme */
         :root {
@@ -140,35 +140,32 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
-        /* Image Display Area */
-        #imageOutput {
+        /* Text Output Area */
+        #textOutput {
             width: 100%;
-            min-height: 200px; /* Provide some initial height */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            min-height: 150px;
             background-color: var(--input-background);
             border: 1px dashed var(--input-border);
             border-radius: var(--border-radius);
             color: var(--text-color);
-            text-align: center;
             padding: 20px;
-            box-sizing: border-box; /* Include padding in width */
-            overflow: hidden; /* Hide overflow from image */
+            box-sizing: border-box;
+            overflow-y: auto; /* Allow scrolling for long text */
+            text-align: left;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            font-family: monospace; /* Good for code/text output */
             position: relative;
-        }
-
-        #generatedImage {
-            max-width: 100%;
-            height: auto;
-            border-radius: var(--border-radius);
-            display: none; /* Hidden by default */
         }
 
         .placeholder-text {
             position: absolute;
             font-style: italic;
             color: var(--text-color);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 90%;
         }
 
         /* Loading Spinner */
@@ -180,6 +177,7 @@
             height: 40px;
             animation: spin 1s linear infinite;
             display: none; /* Hidden by default */
+            margin: 20px auto; /* Center spinner within container */
         }
 
         @keyframes spin {
@@ -242,16 +240,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>AI Text-to-Image Generator</h1>
+        <h1>Cloudflare AI Text Generator</h1>
 
-        <textarea id="promptInput" placeholder="Describe the image you want to generate (e.g., 'A futuristic city at sunset, cyberpunk style, high detail')."></textarea>
+        <textarea id="promptInput" placeholder="Ask me anything (e.g., 'Explain quantum physics simply', 'Write a short story about a talking dog')."></textarea>
 
-        <button id="generateBtn">Generate Image</button>
+        <button id="generateBtn">Generate Text</button>
 
-        <div id="imageOutput">
-            <img id="generatedImage" src="" alt="Generated Image">
+        <div id="textOutput">
+            <p id="textPlaceholder" class="placeholder-text">Your AI-generated text will appear here.</p>
             <div class="spinner" id="loadingSpinner"></div>
-            <p id="imagePlaceholder" class="placeholder-text">Your generated image will appear here.</p>
         </div>
     </div>
 
