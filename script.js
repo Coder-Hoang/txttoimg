@@ -3,8 +3,8 @@ let promptInput = null;
 let generateBtn = null;
 let textOutputDiv = null;
 let textPlaceholder = null;
-let uiverseLoader = null; // Correctly referencing the Uiverse SVG container from index.html
-let generatedTextContent = null; // Div for actual text output (where AI text appears)
+let uiverseLoader = null; // Correctly referencing the Uiverse SVG container
+let generatedTextContent = null; // Div for actual text output
 let themeToggleBtn = null;
 
 // --- Variable to hold the interval ID for loading phrases ---
@@ -15,8 +15,8 @@ const loadingPhrases = [
     "Thinking...",
     "Generating...",
     "Processing...",
-    "Crafting response...",
     "Analyzing input...",
+    "Crafting response...",
     "Fetching wisdom...",
     "Almost there...",
     "Consulting neural networks...",
@@ -85,6 +85,22 @@ const loadingPhrases = [
 function getRandomLoadingPhrase() {
     const randomIndex = Math.floor(Math.random() * loadingPhrases.length);
     return loadingPhrases[randomIndex];
+}
+
+/**
+ * Formats AI-generated text by replacing `**text**` with `<strong>text</strong>`.
+ * This bolds the text and removes the double asterisks.
+ *
+ * @param {string} inputText The raw text string from the AI.
+ * @returns {string} The formatted text with bolding applied.
+ */
+function formatAiText(inputText) {
+    // Use a regular expression to find all occurrences of **text**
+    // The `g` flag ensures all matches are found, not just the first.
+    // The `*?` makes the match non-greedy, so it stops at the first `**`.
+    // The content inside the parentheses `(.*?)` is captured as a group.
+    const formattedText = inputText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return formattedText;
 }
 
 // --- Utility function for showing messages (instead of alert) ---
@@ -195,7 +211,12 @@ async function generateText(prompt) {
         console.log('Full response from Pages Function:', result);
 
         if (result && result.response && typeof result.response === 'string') {
-            if (generatedTextContent) generatedTextContent.textContent = result.response;
+            if (generatedTextContent) {
+                // IMPORTANT: Apply formatting here!
+                const rawAiText = result.response;
+                const formattedText = formatAiText(rawAiText);
+                generatedTextContent.innerHTML = formattedText; // Use innerHTML to render HTML tags
+            }
             showMessage('Text generated successfully!', 'success');
         } else {
             console.error('Unexpected response structure from Pages Function:', result);
@@ -268,7 +289,7 @@ function toggleTheme() {
 /**
  * Initializes the theme based on saved preference or system setting.
  */
-function initializeTheme() { // This function must be globally accessible or called after definition
+function initializeTheme() {
     try {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
