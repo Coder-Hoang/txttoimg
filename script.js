@@ -61,8 +61,7 @@ function showMessage(message, type = 'info') {
 // --- Image Generation Logic ---
 
 /**
- * Generates an image using a Cloudflare Workers AI model.
- * This function will make a request to a Workers AI endpoint proxied by Cloudflare Pages.
+ * Generates an image using a Cloudflare Workers AI model via a Pages Function proxy.
  * @param {string} prompt - The text description for the image.
  * @returns {string|null} Base64 encoded image URL or null on failure.
  */
@@ -74,13 +73,12 @@ async function generateImage(prompt) {
     generateBtn.disabled = true; // Disable button during generation
     generateBtn.textContent = 'Generating...';
 
-    // The model to use from Cloudflare Workers AI
-    const modelName = "@cf/stabilityai/stable-diffusion-xl-lightning";
-    // The API endpoint for Workers AI when accessed via Pages binding
-    // This path assumes a Cloudflare Pages direct binding for Workers AI
-    const apiUrl = `/ai/run/${modelName}`;
+    // *** IMPORTANT CHANGE HERE ***
+    // Now we call our Pages Function directly at the /ai path.
+    // The Pages Function (functions/ai.js) will then handle the AI model call.
+    const apiUrl = `/ai`;
 
-    // The payload for Workers AI text-to-image models
+    // The payload for our Pages Function is just the prompt
     const payload = { prompt: prompt };
 
     try {
@@ -91,24 +89,26 @@ async function generateImage(prompt) {
         });
 
         if (!response.ok) {
-            // If the response is not OK (e.g., 4xx, 5xx), try to read it as text first
-            // This helps debug "Unexpected end of JSON input" if the server sends non-JSON errors
+            // If the response is not OK (e.g., 4xx, 5xx), try to read it as text first.
+            // This helps debug "Unexpected end of JSON input" if the server sends non-JSON errors.
             const errorText = await response.text();
             let errorData = {};
             try {
                 errorData = JSON.parse(errorText);
             } catch (jsonError) {
                 console.error("Failed to parse error response as JSON:", jsonError, "Raw text:", errorText);
-                errorData.message = `Non-JSON error response: ${errorText.substring(0, 100)}...`;
+                errorData.message = `Non-JSON error response from server: ${errorText.substring(0, 100)}...`; // Truncate for display
             }
-            console.error('Workers AI Error Response:', response.status, response.statusText, errorData);
-            const errorMessage = errorData.message || response.statusText || 'Unknown error';
+            console.error('API Error Response:', response.status, response.statusText, errorData);
+            const errorMessage = errorData.error ? errorData.error.message : errorData.message || response.statusText || 'Unknown error';
             throw new Error(`Image generation failed: ${errorMessage}`);
         }
 
         const result = await response.json();
 
-        // Cloudflare Workers AI image generation returns an object with image_base64
+        // Cloudflare Workers AI image generation (via Pages Function) returns an object with image_base64.
+        // The structure is { result: { image_base64: "..." } }
+        // Our Pages Function should ensure this structure is passed back.
         if (result.result && result.result.image_base64) {
             const imageUrl = `data:image/png;base64,${result.result.image_base64}`;
             generatedImage.src = imageUrl;
@@ -116,20 +116,21 @@ async function generateImage(prompt) {
             showMessage('Image generated successfully!', 'success');
             return imageUrl;
         } else {
-            console.error('Unexpected Workers AI response structure:', result);
-            showMessage('Could not generate image. Unexpected response from AI.', 'error');
+            console.error('Unexpected response structure from Pages Function:', result);
+            showMessage('Could not generate image. Unexpected response from Pages Function.', 'error');
             return null;
         }
     } catch (error) {
-        console.error('Error calling Workers AI:', error);
+        console.error('Error calling Pages Function:', error);
         showMessage(`Error: ${error.message}`, 'error');
         return null;
     } finally {
         loadingSpinner.style.display = 'none'; // Hide spinner
         generateBtn.disabled = false; // Re-enable button
         generateBtn.textContent = 'Generate Image';
+        // Only show placeholder if no image was successfully displayed
         if (!generatedImage.src || generatedImage.style.display === 'none') {
-            imagePlaceholder.style.display = 'block'; // Show placeholder if no image displayed
+            imagePlaceholder.style.display = 'block';
         }
     }
 }
