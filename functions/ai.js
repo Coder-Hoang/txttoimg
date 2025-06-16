@@ -1,84 +1,97 @@
+// functions/ai.js
+// This file will handle requests to /ai/* paths in your Pages project
+// It exposes a Pages Function that can directly access the Workers AI binding.
+
+// This function will be triggered by POST requests to /ai
 export async function onRequestPost(context) {
+  // context.env provides access to Pages project environment variables and bindings.
+  // The 'AI' binding (which we configured in Pages settings) is available here.
   const AI = context.env.AI;
-  const modelName = "@cf/lykon/dreamshaper-8-lcm";
+  const modelName = "@cf/stabilityai/stable-diffusion-xl-lightning"; // Specify the model here
+
+  // Ensure the AI binding is available
+  if (!AI) {
+    console.error("Cloudflare AI binding (env.AI) is not available in Pages Function. Check Pages settings for 'AI' binding.");
+    return new Response(JSON.stringify({ error: "AI service not configured correctly. Missing 'AI' binding." }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
+  }
 
   try {
-    const { prompt } = await context.request.json();
+    // Attempt to parse the request body as JSON.
+    // The frontend (script.js) sends the prompt in this format.
+    const requestBody = await context.request.json();
+    const prompt = requestBody.prompt; // Extract the prompt
 
-    console.log("Generating image with prompt:", prompt);
-
-    // Run the model
-    const result = await AI.run(modelName, { prompt });
-    
-    console.log("AI result type:", typeof result);
-    console.log("AI result:", result);
-    console.log("AI result constructor:", result?.constructor?.name);
-
-    let buffer;
-    
-    // Handle different possible response formats from Cloudflare AI
-    if (result instanceof ArrayBuffer) {
-      // If it's already an ArrayBuffer
-      buffer = new Uint8Array(result);
-    } else if (result && typeof result.arrayBuffer === 'function') {
-      // If it has an arrayBuffer method (like Response objects)
-      buffer = new Uint8Array(await result.arrayBuffer());
-    } else if (result instanceof Uint8Array) {
-      // If it's already a Uint8Array
-      buffer = result;
-    } else if (Array.isArray(result)) {
-      // If it's a regular array
-      buffer = new Uint8Array(result);
-    } else if (result && result.data) {
-      // Some AI models return { data: ArrayBuffer } or similar
-      if (result.data instanceof ArrayBuffer) {
-        buffer = new Uint8Array(result.data);
-      } else if (result.data instanceof Uint8Array) {
-        buffer = result.data;
-      } else if (Array.isArray(result.data)) {
-        buffer = new Uint8Array(result.data);
-      } else {
-        throw new Error(`Unexpected result.data format: ${typeof result.data}, constructor: ${result.data?.constructor?.name}`);
-      }
-    } else {
-      // Log more details about what we actually got
-      console.error("Unexpected result format details:");
-      console.error("Type:", typeof result);
-      console.error("Constructor:", result?.constructor?.name);
-      console.error("Keys:", result ? Object.keys(result) : "null/undefined");
-      console.error("Is ArrayBuffer:", result instanceof ArrayBuffer);
-      console.error("Is Uint8Array:", result instanceof Uint8Array);
-      console.error("Has arrayBuffer method:", result && typeof result.arrayBuffer === 'function');
-      
-      throw new Error(`Unexpected result format: ${typeof result}, constructor: ${result?.constructor?.name}`);
+    if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
+      // If no valid prompt is provided, return a 400 Bad Request error.
+      console.warn("Invalid or empty prompt received in Pages Function.");
+      return new Response(JSON.stringify({ error: "Invalid or empty prompt provided." }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 400
+      });
     }
 
-    console.log("Buffer length:", buffer.length);
+    // Call the Cloudflare Workers AI model using the AI binding.
+    // The .run() method takes the model name and the inputs for the model.
+    const inputs = { prompt: prompt };
+    console.log(`Pages Function: Calling AI.run for model: ${modelName} with prompt: "${prompt.substring(0, Math.min(prompt.length, 50))}..."`);
+
+    // *** FIX IS HERE: AI.run for image models returns a ReadableStream ***
+    // We need to read this stream into an ArrayBuffer.
+    const aiResponseStream = await AI.run(modelName, inputs);
+
+    // Check if the response is indeed a ReadableStream
+    if (!(aiResponseStream instanceof ReadableStream)) {
+        console.error("Pages Function: AI.run did not return a ReadableStream as expected:", aiResponseStream);
+        return new Response(JSON.stringify({ error: "AI model returned unexpected response type (not a stream)." }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 500
+        });
+    }
+
+    // Read the ReadableStream into an ArrayBuffer
+    const arrayBuffer = await new Response(aiResponseStream).arrayBuffer();
+    const buffer = new Uint8Array(arrayBuffer);
+
+
+    console.log("Pages Function: Successfully received ArrayBuffer from AI model. Buffer length:", buffer.length);
 
     if (buffer.length === 0) {
-      throw new Error("Generated image buffer is empty");
+      throw new Error("Generated image buffer is empty after AI.run call.");
     }
 
     // Convert buffer to base64
     const binary = Array.from(buffer).map((b) => String.fromCharCode(b)).join("");
     const base64 = btoa(binary);
 
-    console.log("Base64 length:", base64.length);
-    console.log("Base64 preview:", base64.substring(0, 50) + "...");
+    console.log("Pages Function: Base64 length:", base64.length);
+    console.log("Pages Function: Base64 preview:", base64.substring(0, 50) + "...");
 
+    // Return the base64 image data in a JSON object that the frontend expects.
+    // We wrap it in a 'result' object to match the previous structure from external APIs,
+    // making it compatible with the frontend's image display logic.
     return new Response(JSON.stringify({ result: { image_base64: base64 } }), {
       headers: { "Content-Type": "application/json" },
+      status: 200
     });
-  } catch (err) {
-    console.error("Function Error:", err);
-    console.error("Error stack:", err.stack);
-    
-    return new Response(
-      JSON.stringify({ 
-        error: err.message || "Unknown error",
-        stack: err.stack
-      }),
-      { headers: { "Content-Type": "application/json" }, status: 500 }
-    );
+
+  } catch (error) {
+    // Catch any errors during request parsing or AI model execution.
+    // Ensure error.message exists
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorName = error instanceof Error ? error.name : 'UnknownError';
+    const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+
+    console.error("Pages Function: Error caught in onRequestPost:", errorName, errorMessage, errorStack);
+    // Return a structured JSON error response to the frontend
+    return new Response(JSON.stringify({
+      error: `Pages Function internal error: ${errorMessage}`,
+      details: errorStack
+    }), {
+      headers: { 'Content-Type': 'application/json' },
+      status: 500
+    });
   }
 }
