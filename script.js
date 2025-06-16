@@ -1,10 +1,9 @@
 // --- DOM Elements ---
 const promptInput = document.getElementById('promptInput');
 const generateBtn = document.getElementById('generateBtn');
-const imageOutputDiv = document.getElementById('imageOutput');
-const generatedImage = document.getElementById('generatedImage');
+const textOutputDiv = document.getElementById('textOutput');
+const textPlaceholder = document.getElementById('textPlaceholder');
 const loadingSpinner = document.getElementById('loadingSpinner');
-const imagePlaceholder = document.getElementById('imagePlaceholder');
 const themeToggleBtn = document.getElementById('themeToggle');
 
 // --- Utility function for showing messages (instead of alert) ---
@@ -58,24 +57,22 @@ function showMessage(message, type = 'info') {
 }
 
 
-// --- Image Generation Logic ---
+// --- Text Generation Logic ---
 
 /**
- * Generates an image using a Cloudflare Workers AI model via a Pages Function proxy.
- * @param {string} prompt - The text description for the image.
- * @returns {string|null} Base64 encoded image URL or null on failure.
+ * Generates text using a Cloudflare Workers AI LLM via a Pages Function proxy.
+ * @param {string} prompt - The text prompt for the LLM.
  */
-async function generateImage(prompt) {
-    // Hide previous image, show spinner, hide placeholder
-    generatedImage.style.display = 'none';
-    imagePlaceholder.style.display = 'none';
+async function generateText(prompt) {
+    // Clear previous text, show spinner, hide placeholder
+    textOutputDiv.textContent = ''; // Clear existing text
+    textPlaceholder.style.display = 'none';
     loadingSpinner.style.display = 'block';
     generateBtn.disabled = true; // Disable button during generation
     generateBtn.textContent = 'Generating...';
 
-    // Now we call our Pages Function directly at the /ai path.
-    // The Pages Function (functions/ai.js) will then handle the AI model call.
-    const apiUrl = `/ai`;
+    // Call our Pages Function at the /generate-text path.
+    const apiUrl = `/generate-text`;
 
     // The payload for our Pages Function is just the prompt
     const payload = { prompt: prompt };
@@ -94,74 +91,39 @@ async function generateImage(prompt) {
 
             try {
                 errorData = JSON.parse(errorText);
-                // Prefer 'error' property from Pages Function, then 'message', then default
                 errorMessage += errorData.error || errorData.message || 'Unknown error from JSON';
             } catch (jsonError) {
                 console.error("Failed to parse error response as JSON:", jsonError, "Raw text:", errorText);
-                errorMessage += `Non-JSON response from server: ${errorText.substring(0, Math.min(errorText.length, 100))}...`; // Truncate for display
+                errorMessage += `Non-JSON response from server: ${errorText.substring(0, Math.min(errorText.length, 100))}...`;
             }
             
             console.error('API Error Response:', response.status, response.statusText, errorData);
-            throw new Error(`Image generation failed: ${errorMessage}`);
+            throw new Error(`Text generation failed: ${errorMessage}`);
         }
 
         const result = await response.json();
         
         // Debug logging to see what we're actually getting
         console.log('Full response from Pages Function:', result);
-        console.log('result.result:', result.result);
-        if (result.result) {
-            console.log('result.result.image_base64 exists:', 'image_base64' in result.result);
-            console.log('result.result.image_base64 length:', result.result.image_base64?.length);
-            console.log('result.result.image_base64 type:', typeof result.result.image_base64);
-        }
 
-        // Cloudflare Workers AI image generation (via Pages Function) returns an object with image_base64.
-        // The structure is { result: { image_base64: "..." } }
-        // Our Pages Function should ensure this structure is passed back.
-        if (result.result && 'image_base64' in result.result && result.result.image_base64) {
-            const base64Data = result.result.image_base64;
-            
-            // Validate that we actually have base64 data
-            if (typeof base64Data === 'string' && base64Data.length > 0) {
-                const imageUrl = `data:image/png;base64,${base64Data}`;
-                generatedImage.src = imageUrl;
-                generatedImage.style.display = 'block'; // Show the generated image
-                showMessage('Image generated successfully!', 'success');
-                return imageUrl;
-            } else {
-                console.error('image_base64 is empty or not a string:', base64Data);
-                showMessage('Generated image data is empty or invalid.', 'error');
-                return null;
-            }
+        // Cloudflare Workers AI LLM responses typically have 'response' property
+        if (result && result.response && typeof result.response === 'string') {
+            textOutputDiv.textContent = result.response; // Display the AI's response
+            showMessage('Text generated successfully!', 'success');
         } else {
             console.error('Unexpected response structure from Pages Function:', result);
-            console.error('Expected: { result: { image_base64: "..." } }');
-            
-            // More detailed error reporting
-            if (!result.result) {
-                console.error('Missing result property');
-            } else if (!('image_base64' in result.result)) {
-                console.error('Missing image_base64 property in result');
-                console.error('Available properties in result.result:', Object.keys(result.result));
-            } else if (!result.result.image_base64) {
-                console.error('image_base64 property exists but is falsy:', result.result.image_base64);
-            }
-            
-            showMessage('Could not generate image. Unexpected response from Pages Function.', 'error');
-            return null;
+            showMessage('Could not generate text. Unexpected response format from AI.', 'error');
         }
     } catch (error) {
         console.error('Error calling Pages Function:', error);
         showMessage(`Error: ${error.message}`, 'error');
-        return null;
     } finally {
         loadingSpinner.style.display = 'none'; // Hide spinner
         generateBtn.disabled = false; // Re-enable button
-        generateBtn.textContent = 'Generate Image';
-        // Only show placeholder if no image was successfully displayed
-        if (!generatedImage.src || generatedImage.style.display === 'none') {
-            imagePlaceholder.style.display = 'block';
+        generateBtn.textContent = 'Generate Text';
+        // Show placeholder if no text was successfully displayed
+        if (!textOutputDiv.textContent.trim()) {
+            textPlaceholder.style.display = 'block';
         }
     }
 }
@@ -172,23 +134,19 @@ async function generateImage(prompt) {
 generateBtn.addEventListener('click', () => {
     const prompt = promptInput.value.trim();
     if (prompt) {
-        generateImage(prompt);
+        generateText(prompt);
     } else {
-        showMessage('Please enter a description for the image.', 'info');
+        showMessage('Please enter a prompt for the AI.', 'info');
     }
 });
 
-// Allow generating image with Enter key in the textarea
+// Allow generating text with Enter key in the textarea
 promptInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) { // Shift+Enter for new line
         event.preventDefault(); // Prevent new line
         generateBtn.click(); // Trigger button click
     }
 });
-
-
-// --- Theme Toggle Logic ---
-
 /**
  * Sets the theme based on user preference or system setting.
  * @param {string} theme - 'light' or 'dark'.
@@ -262,7 +220,6 @@ function initializeTheme() {
 
 // --- Initialize Application on Page Load ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("Text-to-Image App: DOM Content Loaded. Initializing app.");
+    console.log("Text Generator App: DOM Content Loaded. Initializing app.");
     initializeTheme(); // Set up the theme first
-    // No initial image generation, wait for user prompt
 });
